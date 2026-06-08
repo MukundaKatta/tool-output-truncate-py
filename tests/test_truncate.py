@@ -98,6 +98,13 @@ def test_truncate_middle_one_char_budget_keeps_only_tail():
     assert "9 chars truncated" in out
 
 
+def test_truncate_middle_zero_budget_keeps_only_marker():
+    # max=0 -> head=0, tail=0. Both ends empty, output is just the marker.
+    out = truncate_middle("abcdef", 0)
+    assert "abc" not in out
+    assert out == _marker_for_chars(6)
+
+
 # ---------- UTF-8 / multi-byte safety ----------
 
 
@@ -193,6 +200,32 @@ def test_lines_handles_unicode_lines():
     # head=1 tail=1: head_part='café', tail_part='baz'
     assert out.startswith("café")
     assert out.endswith("baz")
+    assert "5 lines" in out
+
+
+def test_lines_omitted_char_count_matches_removed_middle():
+    # 10 entries, head=2 tail=2 -> middle is lines[2:8] joined by "\n".
+    s = _lines_block(10)
+    out = truncate_middle_lines(s, 4)
+    middle = "\n".join(f"line {i}" for i in range(2, 8))
+    assert f"6 lines / {len(middle)} chars truncated" in out
+
+
+def test_lines_one_line_budget_keeps_only_tail():
+    # max=1 -> head=0, tail=1. head_part is "", tail_part is the last line.
+    s = _lines_block(5)
+    out = truncate_middle_lines(s, 1)
+    assert out.endswith("line 4")
+    assert "line 0" not in out
+    assert "4 lines" in out
+
+
+def test_lines_zero_budget_keeps_only_marker():
+    # max=0 -> head=0, tail=0. Output is just the line marker.
+    s = _lines_block(5)
+    out = truncate_middle_lines(s, 0)
+    assert "line 0" not in out
+    assert "line 4" not in out
     assert "5 lines" in out
 
 
